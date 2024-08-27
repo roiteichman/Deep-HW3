@@ -93,9 +93,23 @@ class Trainer(abc.ABC):
             #  - Implement early stopping. This is a very useful and
             #    simple regularization technique that is highly recommended.
             # ====== YOUR CODE: ======
-            
-            raise NotImplementedError()
+            train_res = self.train_epoch(dl_train, **kw)
+            train_loss += train_res.losses
+            train_acc.append(train_res.accuracy)
 
+            test_res = self.test_epoch(dl_test, **kw)
+            test_loss += test_res.losses
+            test_acc.append(test_res.accuracy)
+
+            if best_acc is None or test_res.accuracy > best_acc:
+                epochs_without_improvement = 0
+                best_acc = test_res.accuracy
+                save_checkpoint = True
+            else:
+                epochs_without_improvement += 1
+                if early_stopping is not None and epochs_without_improvement >= early_stopping:
+                    self._print(f"Early stopping at epoch {epoch + 1} due to no improvement.")
+                    break
             # ========================
 
             # Save model checkpoint if requested
@@ -111,7 +125,7 @@ class Trainer(abc.ABC):
                 )
 
             if post_epoch_fn:
-                post_epoch_fn(epoch, train_result, test_result, verbose)
+                post_epoch_fn(epoch, train_res, test_res, verbose)
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
 
@@ -313,7 +327,22 @@ class TransformerEncoderTrainer(Trainer):
         # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        self.model.train()
+
+        # Forward pass
+        logits = self.model.predict(input_ids, attention_mask)
+        logits = logits.squeeze(logits, dim=-1)
+
+        loss = self.loss_fn(logits, label)
+
+        # Backward pass
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Calculate num_correct for accuracy
+        y_pred = torch.argmax(logits, dim=1)
+        num_correct = torch.sum(label == y_pred)
         # ========================
         
         
@@ -332,7 +361,16 @@ class TransformerEncoderTrainer(Trainer):
             # TODO:
             #  fill out the testing loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            self.model.eval()
+
+            logits = self.model.predict(input_ids, attention_mask)
+
+            label = label.unsqueeze(-1)
+
+            loss = self.loss_fn(logits, label)
+
+            y_pred = torch.argmax(logits, dim=1)
+            num_correct = torch.sum(label == y_pred)
             # ========================
 
             

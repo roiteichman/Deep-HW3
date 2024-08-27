@@ -4,8 +4,6 @@ import math
 
 
 
-
-
 def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     '''
     Computes the simple sliding window attention from 'Longformer: The Long-Document Transformer'.
@@ -37,10 +35,41 @@ def sliding_window_attention(q, k, v, window_size, padding_mask=None):
     ## Think how you can obtain the indices corresponding to the entries in the sliding windows using tensor operations (without loops),
     ## and then use these indices to compute the dot products directly.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    if q.dim() == 3:
+        q = q.unsqueeze(1)
+        k = k.unsqueeze(1)
+        v = v.unsqueeze(1)
+
+    num_heads = q.shape[1]
+
+    row_indices, col_indices = torch.meshgrid(torch.arange(seq_len), torch.arange(seq_len), indexing="ij")
+    attention_mask = torch.abs(row_indices - col_indices) <= window_size // 2
+    masked_rows = row_indices[attention_mask]
+    masked_cols = col_indices[attention_mask]
+
+    q_masked = q[:, :, masked_rows, :]
+    k_masked = k[:, :, masked_cols, :]
+
+    attention_scores = torch.sum(q_masked * k_masked, dim=-1) / (embed_dim ** 0.5)
+    attention = torch.full((batch_size, num_heads, seq_len, seq_len), -9e15, device=q.device)
+    attention[..., masked_rows.flatten(), masked_cols.flatten()] = attention_scores
+
+    if padding_mask is not None:
+        mask_pad = padding_mask.unsqueeze(1).unsqueeze(-1)
+        mask_full = mask_pad * mask_pad.transpose(-1, -2)
+        attention = attention.masked_fill(mask_full == 0, -9e15)
+
+    attention = torch.softmax(attention, dim=-1)
+
+    if padding_mask is not None:
+        attention = attention.masked_fill(mask_full == 0, 0.0)
+
+    values = torch.matmul(attention, v)
+
+    if num_heads == 1:
+        values = values.squeeze(1)
+        attention = attention.squeeze(1)
     # ========================
-
-
     return values, attention
 
 
@@ -84,7 +113,7 @@ class MultiHeadAttention(nn.Module):
         # TODO:
         # call the sliding window attention function you implemented
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        values, attention = sliding_window_attention(q, k, v, self.window_size, padding_mask)
         # ========================
 
         values = values.permute(0, 2, 1, 3) # [Batch, SeqLen, Head, Dims]
@@ -152,7 +181,7 @@ class EncoderLayer(nn.Module):
         self.norm1 = nn.LayerNorm(embed_dim)
         self.norm2 = nn.LayerNorm(embed_dim)
         self.dropout = nn.Dropout(dropout)
-        
+
     def forward(self, x, padding_mask):
         '''
         :param x: the input to the layer of shape [Batch, SeqLen, Dims]
@@ -166,9 +195,14 @@ class EncoderLayer(nn.Module):
         #   3) Apply a feed-forward layer to the output of step 2, and then apply dropout again.
         #   4) Add a second residual connection and normalize again.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        attn_output = self.self_attn(x,padding_mask=padding_mask)
+        attn_output = self.dropout(attn_output)
+        x = self.norm1(x + attn_output)
+        ff_output = self.feed_forward(x)
+        ff_output = self.dropout(ff_output)
+        x = self.norm2(x + ff_output)
         # ========================
-        
+
         return x
     
     
@@ -216,8 +250,12 @@ class Encoder(nn.Module):
         #  5) Apply the classification MLP to the output vector corresponding to the special token [CLS] 
         #     (always the first token) to receive the logits.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        
+        x = self.encoder_embedding(sentence)
+        x = self.positional_encoding(x)
+        x = self.dropout(x)
+        for layer in self.encoder_layers:
+            x = layer(x, padding_mask)
+        output = self.classification_mlp(x[:, 0, :])
         # ========================
         
         

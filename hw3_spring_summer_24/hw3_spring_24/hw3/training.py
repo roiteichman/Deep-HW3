@@ -327,12 +327,12 @@ class TransformerEncoderTrainer(Trainer):
         # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
-        self.model.train()
+        label = label.unsqueeze(-1)
 
         # Forward pass
-        logits = self.model.predict(input_ids, attention_mask)
-        logits = logits.squeeze(logits, dim=-1)
+        logits = self.model.forward(input_ids, attention_mask)
 
+        # Calculate loss
         loss = self.loss_fn(logits, label)
 
         # Backward pass
@@ -340,9 +340,8 @@ class TransformerEncoderTrainer(Trainer):
         loss.backward()
         self.optimizer.step()
 
-        # Calculate num_correct for accuracy
-        y_pred = torch.argmax(logits, dim=1)
-        num_correct = torch.sum(label == y_pred)
+        # Calculate number of correct predictions
+        num_correct = sum(torch.round(torch.sigmoid(logits)) == label)
         # ========================
         
         
@@ -361,16 +360,10 @@ class TransformerEncoderTrainer(Trainer):
             # TODO:
             #  fill out the testing loop.
             # ====== YOUR CODE: ======
-            self.model.eval()
-
-            logits = self.model.predict(input_ids, attention_mask)
-
             label = label.unsqueeze(-1)
-
+            logits = self.model.forward(input_ids, attention_mask)
             loss = self.loss_fn(logits, label)
-
-            y_pred = torch.argmax(logits, dim=1)
-            num_correct = torch.sum(label == y_pred)
+            num_correct = sum(torch.round(torch.sigmoid(logits)) == label)
             # ========================
 
             

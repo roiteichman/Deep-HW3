@@ -184,31 +184,42 @@ By adjusting the dilation factor, the model can control the effective receptive 
 part4_q1 = r"""
 **Your answer:**
 
-
 """
 
 part4_q2 = r"""
 **Your answer:**
-
-
+Freezing different internal layers, such as the multi-headed attention blocks, during fine-tuning can significantly affect the model's ability to adapt to a new task, and the results would likely be worse compared to freezing only the last two linear layers.
+Freezing the attention layers limits the model's ability to fine-tune the critical aspects of its contextual understanding, which is essential for many downstream tasks. If these layers cannot adapt, the model will rely on fixed pre-trained representations that may not be optimal for the new task, leading to worse performance. 
+On the other hand, freezing only the last two linear layers allows the model to adapt the task-specific parameters while retaining the pre-trained contextual understanding from the attention layers. This approach is more likely to yield better results because the model can fine-tune the task-specific parameters while leveraging the pre-trained contextual representations.
 """
 
 
 part4_q3= r"""
 **Your answer:**
+No, BERT is not suitable for machine translation tasks directly because it is an encoder-only model. Machine translation typically requires a sequence-to-sequence model, which includes both an encoder and a decoder.
 
-
+To use BERT for machine translation, you would need to make both architecture changes and training modifications.
+First, you would need to add a decoder to the model to generate the translated output sequence. This decoder would need to be trained jointly with the encoder to learn to generate the target language sequence.
+We would also need to implement cross-attention between the encoder and decoder to allow the decoder to focus on relevant parts of the source sentence.
+Second, you would need to train the model on a machine translation dataset, which includes parallel source and target language sentences.
 """
 
 part4_q4 = r"""
 **Your answer:**
-
+Reasons to choose RNN over transformer:
+1. RNN processes data in a sequential manner, making it well-suited for tasks where the order of data is crucial. On the onther hand transformers process data in parallel, which can be less effective for sequential data.
+2. RNNs are more memory-efficient than transformers, as they only need to store the hidden state of the previous time step. Transformers require storing the entire sequence in memory, which can be computationally expensive.
+3. RNNs have a simpler architecture and it can be easier to implement and interpret, especially for straightforward sequential tasks. Transformers have a more complex architecture with multiple layers and attention mechanisms, which can be harder to understand and tune.
 
 """
 
 part4_q5 = r"""
 **Your answer:**
-
+NSP is a pre-training task used in BERT to help the model understand the relationship between two sentences.
+During pre-training, the model is given pairs of sentences and tasked with predicting whether the second sentence in the pair is the actual next sentence in the original text or a random sentence.
+The prediction occurs at the end of the BERT model, where a classification layer is added to predict whether the second sentence follows the first one.
+The loss used for NSP is typically the binary cross-entropy loss. This loss measures the difference between the predicted probability of the second sentence being the actual next sentence and the true label.
+NSP helps for understanding sentence relationships which can be crucial for tasks like question answering and help the model understand the flow of text and the logical progression between sentences.
 
 """
 

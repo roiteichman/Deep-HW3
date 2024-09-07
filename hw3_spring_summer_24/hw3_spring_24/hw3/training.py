@@ -379,12 +379,23 @@ class FineTuningTrainer(Trainer):
         input_ids = batch["input_ids"].to(self.device)
         attention_masks = batch["attention_mask"]
         labels= batch["label"]
-        # TODO:
         #  fill out the training loop.
         # ====== YOUR CODE: ======
 
-        raise NotImplementedError()
+        # Forward pass
+        logits = self.model.forward(input_ids, attention_masks)
         
+        # Calculate loss
+        loss = self.loss_fn(logits, labels)
+
+        # Backward pass
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Calculate number of correct predictions
+        preds = torch.argmax(logits, dim=1)
+        num_correct = (preds == labels).sum().item()        
         # ========================
         
         return BatchResult(loss, num_correct)
@@ -396,9 +407,16 @@ class FineTuningTrainer(Trainer):
         labels= batch["label"]
         
         with torch.no_grad():
-            # TODO:
             #  fill out the training loop.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            # Forward pass
+            logits = self.model(input_ids, attention_masks)
+            
+            # Calculate loss
+            loss = self.loss_fn(logits, labels)
+
+            # Calculate number of correct predictions
+            preds = torch.argmax(logits, dim=1)
+            num_correct = (preds == labels).sum().item()
             # ========================
         return BatchResult(loss, num_correct)

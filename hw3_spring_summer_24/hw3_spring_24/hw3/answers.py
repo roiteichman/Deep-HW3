@@ -183,6 +183,8 @@ By adjusting the dilation factor, the model can control the effective receptive 
 
 part4_q1 = r"""
 **Your answer:**
+BERT outperforms our previously trained-from-scratch transformer model. This is because BERT is a significantly larger model, pre-trained on a much larger dataset, giving it a stronger grasp of the English language compared to what we can achieve with our smaller dataset and model, which also relies on windowed attention.
+However, these results won't necessarily hold for every downstream task (though they would for most), as there are cases where BERT’s extensive knowledge might not be as beneficial as a task-specific model. For example, BERT struggles with understanding negation.
 
 """
 

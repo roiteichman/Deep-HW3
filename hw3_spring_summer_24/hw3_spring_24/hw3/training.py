@@ -382,12 +382,9 @@ class FineTuningTrainer(Trainer):
         #  fill out the training loop.
         # ====== YOUR CODE: ======
 
-        # Forward pass
-        logits = self.model.forward(input_ids, attention_masks)
-        
-        # Calculate loss
-        loss = self.loss_fn(logits, labels)
-
+        outputs = self.model(input_ids, attention_mask=attention_masks, labels=labels)
+        loss = outputs.loss
+        logits = outputs.logits
         # Backward pass
         self.optimizer.zero_grad()
         loss.backward()
@@ -395,10 +392,10 @@ class FineTuningTrainer(Trainer):
 
         # Calculate number of correct predictions
         preds = torch.argmax(logits, dim=1)
-        num_correct = (preds == labels).sum().item()        
+        num_correct = (preds == labels).sum().item()
         # ========================
         
-        return BatchResult(loss, num_correct)
+        return BatchResult(loss.item(), num_correct)
         
     def test_batch(self, batch) -> BatchResult:
         
@@ -410,13 +407,12 @@ class FineTuningTrainer(Trainer):
             #  fill out the training loop.
             # ====== YOUR CODE: ======
             # Forward pass
-            logits = self.model(input_ids, attention_masks)
-            
-            # Calculate loss
-            loss = self.loss_fn(logits, labels)
+            outputs = self.model(input_ids, attention_mask=attention_masks, labels=labels)
+            loss = outputs.loss
+            logits = outputs.logits
 
             # Calculate number of correct predictions
             preds = torch.argmax(logits, dim=1)
             num_correct = (preds == labels).sum().item()
             # ========================
-        return BatchResult(loss, num_correct)
+        return BatchResult(loss.item(), num_correct)

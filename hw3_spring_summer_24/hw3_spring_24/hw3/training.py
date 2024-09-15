@@ -20,7 +20,7 @@ class Trainer(abc.ABC):
     - Single batch (train_batch/test_batch)
     """
 
-    def __init__(self, model, loss_fn, optimizer, device="cpu"):
+    def __init__(self, model, loss_fn, optimizer, device="cuda"):
         """
         Initialize the trainer.
         :param model: Instance of the model to train.
@@ -381,6 +381,8 @@ class FineTuningTrainer(Trainer):
         labels= batch["label"]
         #  fill out the training loop.
         # ====== YOUR CODE: ======
+        attention_masks = batch["attention_mask"].to(self.device)
+        labels = batch["label"].to(self.device)
 
         outputs = self.model(input_ids, attention_mask=attention_masks, labels=labels)
         loss = outputs.loss
@@ -406,6 +408,9 @@ class FineTuningTrainer(Trainer):
         with torch.no_grad():
             #  fill out the training loop.
             # ====== YOUR CODE: ======
+            attention_masks = batch["attention_mask"].to(self.device)
+            labels = batch["label"].to(self.device)
+
             # Forward pass
             outputs = self.model(input_ids, attention_mask=attention_masks, labels=labels)
             loss = outputs.loss
